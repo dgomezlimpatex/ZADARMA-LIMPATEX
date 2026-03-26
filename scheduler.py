@@ -45,7 +45,19 @@ EXTENSIONES_TRABAJADORES = {
     "sara": "101",
     "kia": "102",
     "tamara": "106",
+    "santi": "110",
+    "sofia": "111",
 }
+
+# Semana base de la rotación de Turquoise:
+# Semana A:
+# - Santi: L-V 10-14 y S-D 10-23
+# - Sofía: L-V 14-23
+#
+# Semana B:
+# - Sofía: L-V 10-14 y S-D 10-23
+# - Santi: L-V 14-23
+ROTACION_TURQUOISE_BASE = datetime(2026, 3, 23).date()
 
 STATE_FILE = os.path.join(BASE_DIR, "state.json")
 LOG_FILE = os.path.join(BASE_DIR, "scheduler.log")
@@ -175,8 +187,6 @@ def test_auth() -> bool:
 
 # ─── DESVÍOS ─────────────────────────────────────────────
 
-# ─── DESVÍOS ─────────────────────────────────────────────
-
 def obtener_desvio_actual(ext_receptora: str) -> dict:
     try:
         result = zadarma_get("/v1/pbx/redirection/", {"pbx_number": ext_receptora})
@@ -207,8 +217,7 @@ def set_desvio_extension(ext_receptora: str, ext_destino: str) -> bool:
         destino_real = str(despues.get("destination", "")).strip()
 
         if (
-            result.get("status") == "success"
-            and despues.get("current_status") == "on"
+            despues.get("current_status") == "on"
             and destino_real == str(ext_destino)
         ):
             log.info(f"    ext {ext_receptora} → ext {ext_destino} [CONFIRMADO]")
@@ -255,6 +264,7 @@ def quitar_desvio_extension(ext_receptora: str) -> bool:
     except Exception as e:
         log.error(f"    ext {ext_receptora} error quitando desvío: {e}")
         return False
+
 # ─── LÓGICA DE TURNOS ────────────────────────────────────
 
 def hora_float(dt: datetime) -> float:
@@ -272,7 +282,70 @@ def turno_activo(turno: Turno, ahora: datetime) -> bool:
     ventana_b = (ayer in turno.dias) and (h < turno.fin)
     return ventana_a or ventana_b
 
+def semana_rotacion_turquoise(fecha):
+    """
+    Devuelve 0 para semana A, 1 para semana B
+    """
+    delta_dias = (fecha - ROTACION_TURQUOISE_BASE).days
+    semanas = delta_dias // 7
+    return semanas % 2
+
+def empleado_turquoise_rotativo(ahora: datetime) -> Optional[str]:
+    """
+    Gestiona el horario diurno de Turquoise:
+    - Semana A:
+        Santi 10-14 y sábado/domingo 10-23
+        Sofía 14-23 lunes-viernes
+    - Semana B:
+        Sofía 10-14 y sábado/domingo 10-23
+        Santi 14-23 lunes-viernes
+    """
+    wd = ahora.weekday()   # 0=lunes ... 6=domingo
+    h = hora_float(ahora)
+    semana = semana_rotacion_turquoise(ahora.date())
+
+    # Fuera del horario diurno de Turquoise
+    if h < 10.0 or h >= 23.0:
+        return None
+
+    # Semana A
+    if semana == 0:
+        # Lunes a viernes
+        if wd in [0, 1, 2, 3, 4]:
+            if 10.0 <= h < 14.0:
+                return "santi"
+            if 14.0 <= h < 23.0:
+                return "sofia"
+
+        # Sábado y domingo
+        if wd in [5, 6]:
+            if 10.0 <= h < 23.0:
+                return "santi"
+
+    # Semana B
+    else:
+        # Lunes a viernes
+        if wd in [0, 1, 2, 3, 4]:
+            if 10.0 <= h < 14.0:
+                return "sofia"
+            if 14.0 <= h < 23.0:
+                return "santi"
+
+        # Sábado y domingo
+        if wd in [5, 6]:
+            if 10.0 <= h < 23.0:
+                return "sofia"
+
+    return None
+
 def empleado_de_turno(cliente: str, ahora: datetime) -> Optional[str]:
+    # Turquoise primero mira su rotación diurna propia
+    if cliente == "turquoise":
+        emp_rotativo = empleado_turquoise_rotativo(ahora)
+        if emp_rotativo:
+            return emp_rotativo
+
+    # Resto de lógica general
     for turno in TURNOS:
         if cliente in turno.clientes and turno_activo(turno, ahora):
             return turno.empleado
