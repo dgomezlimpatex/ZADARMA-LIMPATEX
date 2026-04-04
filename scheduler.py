@@ -106,14 +106,15 @@ TURNOS = [
     Turno("dani", ["marina30"], [6], 19.0, 23.0),
     Turno("dani", ["turquoise", "marina30"], [5], 8.0, 23.0),  # sábado hasta 23
     Turno("dani", ["marina30"], [0, 1, 2, 3, 4, 5, 6], 23.0, 8.0, nocturno=True),
-    Turno("dani", ["turquoise"], [4, 5], 23.0, 8.0, nocturno=True)
-    
+
     # SARA
     Turno("sara", ["marina30"], [0, 1, 2, 3, 4], 19.0, 23.0),
 
     # KIA
     Turno("kia", ["turquoise"], [6, 0, 1, 2, 3], 23.0, 7.0, nocturno=True),
 
+    # DANI extra para viernes y sábado noche en Turquoise
+    Turno("dani", ["turquoise"], [4, 5], 23.0, 8.0, nocturno=True),
 ]
 
 # ─── FIRMA ZADARMA API ───────────────────────────────────
