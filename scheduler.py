@@ -1,4 +1,3 @@
-"""
 scheduler.py — Limpatex / Zadarma shift scheduler (PRODUCCIÓN)
 """
 
@@ -18,7 +17,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 # ─── CARGAR .ENV ─────────────────────────────────────────
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.abspath(_file_))
 ENV_FILE = os.path.join(BASE_DIR, ".env")
 load_dotenv(ENV_FILE)
 
@@ -90,13 +89,14 @@ log = logging.getLogger("limpatex")
 # ─── DEFINICIÓN DE TURNOS ────────────────────────────────
 
 class Turno:
-    def __init__(self, empleado, clientes, dias, inicio, fin, nocturno=False):
+    def _init_(self, empleado, clientes, dias, inicio, fin, nocturno=False):
         self.empleado = empleado
         self.clientes = clientes
         self.dias = dias
         self.inicio = inicio
         self.fin = fin
         self.nocturno = nocturno
+
 
 TURNOS = [
     # DANI
@@ -136,6 +136,7 @@ def _firma_zadarma(method: str, params: dict | None = None) -> str:
     sign = base64.b64encode(hmac_hex.encode("utf-8")).decode("utf-8")
     return f"{ZADARMA_KEY}:{sign}"
 
+
 def zadarma_get(method: str, params: dict | None = None) -> dict:
     if params is None:
         params = {}
@@ -154,6 +155,7 @@ def zadarma_get(method: str, params: dict | None = None) -> dict:
     )
     resp.raise_for_status()
     return resp.json()
+
 
 def zadarma_post(method: str, params: dict) -> dict:
     auth = _firma_zadarma(method, params)
@@ -195,6 +197,7 @@ def obtener_desvio_actual(ext_receptora: str) -> dict:
         log.error(f"    ext {ext_receptora} error consultando desvío actual: {e}")
         return {}
 
+
 def set_desvio_extension(ext_receptora: str, ext_destino: str) -> bool:
     try:
         antes = obtener_desvio_actual(ext_receptora)
@@ -216,10 +219,7 @@ def set_desvio_extension(ext_receptora: str, ext_destino: str) -> bool:
 
         destino_real = str(despues.get("destination", "")).strip()
 
-        if (
-            despues.get("current_status") == "on"
-            and destino_real == str(ext_destino)
-        ):
+        if despues.get("current_status") == "on" and destino_real == str(ext_destino):
             log.info(f"    ext {ext_receptora} → ext {ext_destino} [CONFIRMADO]")
             return True
 
@@ -232,6 +232,7 @@ def set_desvio_extension(ext_receptora: str, ext_destino: str) -> bool:
     except Exception as e:
         log.error(f"    ext {ext_receptora} error API: {e}")
         return False
+
 
 def quitar_desvio_extension(ext_receptora: str) -> bool:
     try:
@@ -270,6 +271,7 @@ def quitar_desvio_extension(ext_receptora: str) -> bool:
 def hora_float(dt: datetime) -> float:
     return dt.hour + dt.minute / 60.0
 
+
 def turno_activo(turno: Turno, ahora: datetime) -> bool:
     h = hora_float(ahora)
     wd = ahora.weekday()
@@ -282,6 +284,7 @@ def turno_activo(turno: Turno, ahora: datetime) -> bool:
     ventana_b = (ayer in turno.dias) and (h < turno.fin)
     return ventana_a or ventana_b
 
+
 def semana_rotacion_turquoise(fecha):
     """
     Devuelve 0 para semana A, 1 para semana B
@@ -289,6 +292,7 @@ def semana_rotacion_turquoise(fecha):
     delta_dias = (fecha - ROTACION_TURQUOISE_BASE).days
     semanas = delta_dias // 7
     return semanas % 2
+
 
 def empleado_turquoise_rotativo(ahora: datetime) -> Optional[str]:
     """
@@ -310,33 +314,30 @@ def empleado_turquoise_rotativo(ahora: datetime) -> Optional[str]:
 
     # Semana A
     if semana == 0:
-        # Lunes a viernes
         if wd in [0, 1, 2, 3, 4]:
             if 10.0 <= h < 14.0:
                 return "santi"
             if 14.0 <= h < 23.0:
                 return "sofia"
 
-        # Sábado y domingo
         if wd in [5, 6]:
             if 10.0 <= h < 23.0:
                 return "santi"
 
     # Semana B
     else:
-        # Lunes a viernes
         if wd in [0, 1, 2, 3, 4]:
             if 10.0 <= h < 14.0:
                 return "sofia"
             if 14.0 <= h < 23.0:
                 return "santi"
 
-        # Sábado y domingo
         if wd in [5, 6]:
             if 10.0 <= h < 23.0:
                 return "sofia"
 
     return None
+
 
 def empleado_de_turno(cliente: str, ahora: datetime) -> Optional[str]:
     # Turquoise primero mira su rotación diurna propia
@@ -359,6 +360,7 @@ def cargar_estado() -> dict:
             return json.load(f)
     except Exception:
         return {}
+
 
 def guardar_estado(estado: dict):
     try:
@@ -440,5 +442,6 @@ def main():
     if errores:
         alerta_telegram("\n".join(errores))
 
-if __name__ == "__main__":
+
+if _name_ == "_main_":
     main()
