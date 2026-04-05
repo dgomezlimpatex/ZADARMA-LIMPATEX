@@ -1,4 +1,4 @@
-scheduler.py — Limpatex / Zadarma shift scheduler (PRODUCCIÓN)
+# scheduler.py - Limpatex / Zadarma shift scheduler (PRODUCCION)
 """
 
 import hashlib
