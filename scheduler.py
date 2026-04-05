@@ -1,5 +1,4 @@
 # scheduler.py - Limpatex / Zadarma shift scheduler (PRODUCCION)
-"""
 
 import hashlib
 import hmac
@@ -17,7 +16,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 # ─── CARGAR .ENV ─────────────────────────────────────────
 
-BASE_DIR = os.path.dirname(os.path.abspath(_file_))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ENV_FILE = os.path.join(BASE_DIR, ".env")
 load_dotenv(ENV_FILE)
 
@@ -71,6 +70,7 @@ def get_spain_tz():
         # OJO: esto no ajusta automáticamente horario de verano.
         return timezone(timedelta(hours=1))
 
+
 TZ = get_spain_tz()
 
 # ─── LOGGING ─────────────────────────────────────────────
@@ -89,7 +89,7 @@ log = logging.getLogger("limpatex")
 # ─── DEFINICIÓN DE TURNOS ────────────────────────────────
 
 class Turno:
-    def _init_(self, empleado, clientes, dias, inicio, fin, nocturno=False):
+    def __init__(self, empleado, clientes, dias, inicio, fin, nocturno=False):
         self.empleado = empleado
         self.clientes = clientes
         self.dias = dias
@@ -286,24 +286,12 @@ def turno_activo(turno: Turno, ahora: datetime) -> bool:
 
 
 def semana_rotacion_turquoise(fecha):
-    """
-    Devuelve 0 para semana A, 1 para semana B
-    """
     delta_dias = (fecha - ROTACION_TURQUOISE_BASE).days
     semanas = delta_dias // 7
     return semanas % 2
 
 
 def empleado_turquoise_rotativo(ahora: datetime) -> Optional[str]:
-    """
-    Gestiona el horario diurno de Turquoise:
-    - Semana A:
-        Santi 10-14 y sábado/domingo 10-23
-        Sofía 14-23 lunes-viernes
-    - Semana B:
-        Sofía 10-14 y sábado/domingo 10-23
-        Santi 14-23 lunes-viernes
-    """
     wd = ahora.weekday()   # 0=lunes ... 6=domingo
     h = hora_float(ahora)
     semana = semana_rotacion_turquoise(ahora.date())
@@ -443,5 +431,5 @@ def main():
         alerta_telegram("\n".join(errores))
 
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     main()
