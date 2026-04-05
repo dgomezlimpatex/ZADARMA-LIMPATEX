@@ -286,6 +286,9 @@ def turno_activo(turno: Turno, ahora: datetime) -> bool:
 
 
 def semana_rotacion_turquoise(fecha):
+    """
+    Devuelve 0 para semana A y 1 para semana B.
+    """
     delta_dias = (fecha - ROTACION_TURQUOISE_BASE).days
     semanas = delta_dias // 7
     return semanas % 2
